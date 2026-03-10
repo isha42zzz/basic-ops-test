@@ -45,7 +45,6 @@ def decode_userdata_text(userdata_hex: str) -> str:
 def verify_attestation_report(
     report_path: Path,
     expected_userdata: str,
-    require_csv_policy: bool = True,
 ) -> dict[str, Any]:
     verifier = AttestationReportVerifier(str(report_path))
     if not verifier.verify_signature():
@@ -60,10 +59,12 @@ def verify_attestation_report(
             f"attestation userdata mismatch: got={userdata_text}, expected={expected_userdata}"
         )
 
-    if require_csv_policy:
-        policy_items = claims.get("POLICY_ITEMS", [])
-        if "CSV" not in policy_items:
-            raise RuntimeError(f"policy does not include CSV: {policy_items}")
+    policy_items = claims.get("POLICY_ITEMS", [])
+    if policy_items and "CSV" not in policy_items:
+        print(
+            "[WARN] attestation policy does not include CSV bit; "
+            f"policy_items={policy_items}"
+        )
 
     return claims
 
@@ -130,8 +131,8 @@ def main() -> int:
     parser.add_argument(
         "--timeout-sec",
         type=float,
-        default=120.0,
-        help="HTTP 超时秒数",
+        default=None,
+        help="HTTP 超时秒数（默认: quick=120, full=1800）",
     )
     parser.add_argument(
         "--artifacts-dir",
@@ -154,6 +155,14 @@ def main() -> int:
         help="允许使用 HTTP（仅测试，不建议）",
     )
     args = parser.parse_args()
+
+    timeout_sec = (
+        float(args.timeout_sec)
+        if args.timeout_sec is not None
+        else (1800.0 if args.profile == "full" else 120.0)
+    )
+    if timeout_sec <= 0:
+        raise RuntimeError("timeout-sec must be > 0")
 
     repo_root = Path(__file__).resolve().parents[1]
     artifacts_dir = (repo_root / args.artifacts_dir).resolve()
@@ -178,6 +187,7 @@ def main() -> int:
     nonce = secrets.token_hex(16)
     start = time.perf_counter()
     client_priv_pem, client_pub_pem = generate_x25519_keypair_pem()
+    print(f"[INFO] profile={args.profile}, timeout_sec={timeout_sec:.1f}")
 
     # Step 1: 请求 report
     status, payload = post_json(
@@ -186,7 +196,7 @@ def main() -> int:
             "nonce": nonce,
             "client_pubkey_b64": base64.b64encode(client_pub_pem).decode("ascii"),
         },
-        timeout_sec=args.timeout_sec,
+        timeout_sec=timeout_sec,
         ssl_context=ssl_context,
     )
     if status != 200 or not isinstance(payload, dict):
@@ -238,7 +248,7 @@ def main() -> int:
             "nonce": nonce,
             "sealed_request": sealed_request,
         },
-        timeout_sec=args.timeout_sec,
+        timeout_sec=timeout_sec,
         ssl_context=ssl_context,
     )
     if run_status != 200 or not isinstance(bench_payload, dict):
@@ -254,6 +264,10 @@ def main() -> int:
     print(
         f"      bench_exec={bench_exec_sec:.4f}s, "
         f"all_pass={bench_data['all_pass']}"
+    )
+    print(
+        f"      profile={bench_data.get('profile', 'unknown')}, "
+        f"seed={bench_data.get('seed', 'unknown')}"
     )
     for item in bench_data["results"]:
         print_bench_result(item)

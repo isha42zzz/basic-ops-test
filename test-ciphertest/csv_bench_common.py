@@ -207,7 +207,7 @@ def _run_search(sealed_vector: str, key: bytes) -> dict[str, Any]:
     elapsed = decrypt_data_elapsed + compute_elapsed
 
     return {
-        "name": "(1) 明文查找",
+        "name": "(1) 密文查找",
         "elapsed_sec": elapsed,
         "decrypt_data_sec": decrypt_data_elapsed,
         # Keep legacy field for backward compatibility with old clients.
@@ -232,7 +232,7 @@ def _run_add(sealed_vector: str, key: bytes) -> dict[str, Any]:
     compute_elapsed = time.perf_counter() - t1
     elapsed = decrypt_data_elapsed + compute_elapsed
     return {
-        "name": "(2) 明文加法",
+        "name": "(2) 密文加法",
         "elapsed_sec": elapsed,
         "decrypt_data_sec": decrypt_data_elapsed,
         # Keep legacy field for backward compatibility with old clients.
@@ -257,7 +257,7 @@ def _run_mul(sealed_vector: str, key: bytes) -> dict[str, Any]:
     compute_elapsed = time.perf_counter() - t1
     elapsed = decrypt_data_elapsed + compute_elapsed
     return {
-        "name": "(3) 明文乘法",
+        "name": "(3) 密文乘法",
         "elapsed_sec": elapsed,
         "decrypt_data_sec": decrypt_data_elapsed,
         # Keep legacy field for backward compatibility with old clients.
@@ -282,7 +282,7 @@ def _run_compare(sealed_vector: str, key: bytes) -> dict[str, Any]:
     compute_elapsed = time.perf_counter() - t1
     elapsed = decrypt_data_elapsed + compute_elapsed
     return {
-        "name": "(4) 明文比较",
+        "name": "(4) 密文比较",
         "elapsed_sec": elapsed,
         "decrypt_data_sec": decrypt_data_elapsed,
         # Keep legacy field for backward compatibility with old clients.
@@ -312,7 +312,7 @@ def _run_intersection(sealed_vector: str, key: bytes) -> dict[str, Any]:
     elapsed = decrypt_data_elapsed + compute_elapsed
 
     return {
-        "name": "(5) 明文求交",
+        "name": "(5) 密文求交",
         "elapsed_sec": elapsed,
         "decrypt_data_sec": decrypt_data_elapsed,
         # Keep legacy field for backward compatibility with old clients.
